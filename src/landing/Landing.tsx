@@ -19,12 +19,47 @@ const FAQ: { q: string; a: string }[] = [
   { q: '무료인가요? 가입해야 하나요?', a: '무료이고 가입도 없어요. 광고나 추적 코드도 넣지 않았어요.' },
 ];
 
+const USES: { title: string; text: string; tools: string[]; hue: number; art: 'cut' | 'rotate' | 'slides' | 'photos' | 'pick' | 'split' }[] = [
+  { title: '스캔본이 옆으로 누웠을 때', text: '누운 페이지만 골라서 R 한 번. 여러 장이면 모두 골라서 한꺼번에 돌려요.', tools: ['정리', '회전'], hue: 214, art: 'rotate' },
+  { title: '영수증 사진을 PDF 하나로', text: '휴대폰 사진 여러 장을 한 번에 올리면 한 장씩 페이지가 되어 이어져요.', tools: ['합치기', '이미지'], hue: 32, art: 'photos' },
+  { title: '강의 자료를 발표 슬라이드로', text: 'PDF 페이지마다 슬라이드 한 장. 글자는 발표자 노트로 따라와요.', tools: ['PPTX'], hue: 268, art: 'slides' },
+  { title: '계약서에서 한 장만 빼기', text: '필요 없는 페이지를 지우고, 서명할 페이지만 따로 저장해요.', tools: ['정리', '고른 페이지 저장'], hue: 340, art: 'cut' },
+  { title: '두 보고서에서 필요한 장만', text: '두 PDF를 나란히 펼쳐 놓고 눌러 담으면 새 문서가 돼요.', tools: ['골라 만들기'], hue: 152, art: 'pick' },
+  { title: '두꺼운 문서를 장별로', text: '“1-12, 13-30, 31-” 처럼 적으면 파일 세 개로 나눠 ZIP으로 받아요.', tools: ['나누기'], hue: 190, art: 'split' },
+];
+
+const STEPS = [
+  { title: '열기', text: 'PDF나 사진을 위의 빈칸에 끌어다 놓거나 눌러서 골라요. 여러 개도 한 번에.' },
+  { title: '편집', text: '페이지를 끌어서 옮기고, 골라서 돌리거나 지워요. 실수해도 ⌘Z.' },
+  { title: '저장', text: 'PDF · 나눈 PDF · PPTX · 이미지 중 하나로 내려받아요.' },
+];
+
 export default function Landing() {
   const [drag, setDrag] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.title = 'Folio — 브라우저에서 끝내는 PDF 편집';
+  }, []);
+
+  // 화면에 들어오는 부분부터 차례로 나타나요
+  useEffect(() => {
+    const els = root.current?.querySelectorAll('[data-reveal]');
+    if (!els) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-in');
+            io.unobserve(e.target);
+          }
+        }
+      },
+      { threshold: 0.18, rootMargin: '0px 0px -8% 0px' },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
   }, []);
 
   const open = () => input.current?.click();
@@ -36,12 +71,13 @@ export default function Landing() {
 
   return (
     <div
+      ref={root}
       className={`lp${drag ? ' is-drag' : ''}`}
       onDragOver={(e) => {
         e.preventDefault();
         setDrag(true);
       }}
-      onDragLeave={(e) => e.currentTarget === e.target && setDrag(false)}
+      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDrag(false)}
       onDrop={onDrop}
     >
       <input
@@ -59,13 +95,21 @@ export default function Landing() {
         </a>
         <nav>
           <a href="#tools" onClick={scrollTo('tools')}>기능</a>
-          <a href="#how" onClick={scrollTo('how')}>사용법</a>
+          <a href="#uses" onClick={scrollTo('uses')}>이럴 때</a>
           <a href="#faq" onClick={scrollTo('faq')}>자주 묻는 질문</a>
         </nav>
-        <a className="lp-nav-cta" href="#/studio">편집기 열기</a>
+        <div className="lp-nav-ctas">
+          <a className="lp-nav-ghost" href="#/studio">
+            빈 편집기<span className="lp-hide-sm">로 시작</span>
+          </a>
+          <button className="lp-nav-cta" onClick={open}>PDF 열기</button>
+        </div>
       </header>
 
       <section className="lp-hero">
+        <div className="lp-glow" aria-hidden>
+          <i /><i /><i />
+        </div>
         <h1 className="lp-title">
           <span>PDF를</span>
           <span>종이처럼.</span>
@@ -75,15 +119,25 @@ export default function Landing() {
           <br />
           파일은 이 브라우저 밖으로 한 번도 나가지 않아요.
         </p>
-        <div className="lp-actions">
-          <button className="lp-btn" onClick={open}>PDF 열기</button>
-          <a className="lp-link" href="#/studio">빈 편집기로 시작</a>
-        </div>
-        <p className="lp-hint">또는 이 화면 아무 곳에 PDF를 끌어다 놓으세요</p>
+
+        <button className="lp-tray" onClick={open} aria-label="PDF나 사진 파일 고르기">
+          <span className="lp-tray-slots" aria-hidden>
+            <i /><i /><i />
+          </span>
+          <span className="lp-tray-text">
+            <strong>{drag ? '놓으면 바로 열려요' : 'PDF를 여기에 끌어다 놓으세요'}</strong>
+            <small>또는 눌러서 파일 고르기 · PDF, JPG, PNG · 여러 개를 한 번에</small>
+          </span>
+          <span className="lp-tray-btn" aria-hidden>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
+            파일 고르기
+          </span>
+        </button>
+
         <Shuffle />
       </section>
 
-      <section className="lp-claim" aria-label="개인정보">
+      <section className="lp-claim" aria-label="개인정보" data-reveal>
         <p>
           올리기 버튼은 있지만,
           <br />
@@ -105,44 +159,26 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="lp-tools" id="tools">
-        <h2 className="lp-h2">필요한 건 다 있어요.</h2>
-        <ul>
-          {TOOLS.map((t) => (
-            <li key={t.name} className="lp-tool">
-              <ToolArt kind={t.art} />
+      <Billboard />
+
+      <Row onPick={open} />
+
+      <section className="lp-how" id="how" data-reveal>
+        <h2 className="lp-h2">세 단계면 끝나요.</h2>
+        <ol>
+          {STEPS.map((st, i) => (
+            <li key={st.title} style={{ ['--d' as string]: `${i * 120}ms` }}>
+              <b aria-hidden>{i + 1}</b>
               <div>
-                <h3>{t.name}</h3>
-                <p>{t.text}</p>
+                <h3>{st.title}</h3>
+                <p>{st.text}</p>
               </div>
             </li>
           ))}
-        </ul>
-        <p className="lp-tools-more">되돌리기와 다시 하기, 빈 페이지 넣기, 순서 뒤집기, 홀수 · 짝수 페이지 고르기, 키보드 단축키까지.</p>
-      </section>
-
-      <section className="lp-how" id="how">
-        <h2 className="lp-h2">세 단계면 끝나요.</h2>
-        <ol>
-          <li>
-            <b>1</b>
-            <h3>열기</h3>
-            <p>PDF나 사진을 끌어다 놓거나 골라요. 여러 개도 한 번에.</p>
-          </li>
-          <li>
-            <b>2</b>
-            <h3>편집</h3>
-            <p>페이지를 끌어서 옮기고, 골라서 돌리거나 지워요. 실수해도 ⌘Z.</p>
-          </li>
-          <li>
-            <b>3</b>
-            <h3>저장</h3>
-            <p>PDF · 나눈 PDF · PPTX · 이미지 중 하나로 내려받아요.</p>
-          </li>
         </ol>
       </section>
 
-      <section className="lp-faq" id="faq">
+      <section className="lp-faq" id="faq" data-reveal>
         <h2 className="lp-h2">자주 묻는 질문</h2>
         <div>
           {FAQ.map((f) => (
@@ -157,28 +193,133 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="lp-end">
-        <h2>지금 PDF 하나 열어 보세요.</h2>
-        <button className="lp-drop" onClick={open}>
-          <span className="lp-drop-icon" aria-hidden>
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4M7 9l5-5 5 5M5 20h14" /></svg>
-          </span>
-          <span>
-            <strong>여기를 눌러 파일 고르기</strong>
-            <small>또는 끌어다 놓기 · PDF, JPG, PNG</small>
-          </span>
-        </button>
-      </section>
-
-      <footer className="lp-foot">
-        <span><Mark /> Folio</span>
-        <span>모든 처리는 내 기기 안에서 · pdf.js · pdf-lib · PptxGenJS</span>
+      <footer className="lp-foot" data-reveal>
+        <div className="lp-sign">
+          <span className="lp-sign-by">Designed &amp; built by</span>
+          <a className="lp-sign-name" href="https://github.com/makerskim" target="_blank" rel="noreferrer">
+            makerskim
+          </a>
+        </div>
+        <div className="lp-foot-row">
+          <span><Mark /> Folio</span>
+          <span>© {new Date().getFullYear()} makerskim · 모든 처리는 내 기기 안에서 · pdf.js · pdf-lib · PptxGenJS</span>
+        </div>
       </footer>
 
       <div className="lp-dropveil" aria-hidden>
         <div>놓으면 바로 열려요</div>
       </div>
     </div>
+  );
+}
+
+/* 넷플릭스 첫 화면처럼 기능이 저절로 넘어가요. 누르면 그 기능에 멈춰요 */
+function Billboard() {
+  const [on, setOn] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [seen, setSeen] = useState(false);
+  const box = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const io = new IntersectionObserver(([e]) => setSeen(e.isIntersecting), { threshold: 0.3 });
+    if (box.current) io.observe(box.current);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (paused || !seen) return;
+    const t = setTimeout(() => setOn((v) => (v + 1) % TOOLS.length), 5200);
+    return () => clearTimeout(t);
+  }, [on, paused, seen]);
+
+  return (
+    <section className="lp-bill" id="tools" ref={box} data-reveal>
+      <h2 className="lp-h2">필요한 건 다 있어요.</h2>
+      <div className="lp-bill-grid" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+        <ul className="lp-bill-tabs" role="tablist" aria-label="기능">
+          {TOOLS.map((t, i) => (
+            <li key={t.name}>
+              <button
+                role="tab"
+                aria-selected={on === i}
+                className={on === i ? 'is-on' : ''}
+                onClick={() => {
+                  setOn(i);
+                  setPaused(true);
+                }}
+              >
+                <span className="lp-bill-name">{t.name}</span>
+                <span className="lp-bill-text">{t.text}</span>
+                <span className="lp-bill-bar" aria-hidden>
+                  <i key={on === i ? `${i}-${paused}-${seen}` : i} className={on === i && !paused && seen ? 'is-run' : ''} />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="lp-bill-stage" aria-live="polite">
+          {TOOLS.map((t, i) => (
+            <div key={t.name} className={`lp-bill-panel${on === i ? ' is-on' : ''}`} aria-hidden={on !== i}>
+              <ToolArt kind={t.art} />
+              <span className="lp-bill-caption">{t.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="lp-tools-more">되돌리기와 다시 하기, 빈 페이지 넣기, 순서 뒤집기, 홀수 · 짝수 페이지 고르기, 키보드 단축키까지.</p>
+    </section>
+  );
+}
+
+/* 넷플릭스 줄처럼 옆으로 넘기고, 올리면 카드가 커지면서 자세히 보여요 */
+function Row({ onPick }: { onPick: () => void }) {
+  const track = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState({ start: true, end: false });
+  const update = () => {
+    const el = track.current;
+    if (!el) return;
+    setEdge({ start: el.scrollLeft < 8, end: el.scrollLeft + el.clientWidth > el.scrollWidth - 8 });
+  };
+  useEffect(update, []);
+  const go = (dir: number) => {
+    const el = track.current;
+    el?.scrollBy({ left: dir * el.clientWidth * 0.86, behavior: 'smooth' });
+  };
+  return (
+    <section className="lp-row" id="uses" data-reveal>
+      <h2 className="lp-h2">이럴 때 써요.</h2>
+      <div className="lp-row-wrap">
+        <button className="lp-row-arrow is-prev" onClick={() => go(-1)} disabled={edge.start} aria-label="이전">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>
+        </button>
+        <div className="lp-row-track" ref={track} onScroll={update}>
+          {USES.map((u, i) => (
+            <article key={u.title} className="lp-card" style={{ ['--h' as string]: u.hue, ['--d' as string]: `${i * 70}ms` }} tabIndex={0}>
+              <div className={`lp-card-poster is-${u.art}`} aria-hidden>
+                <span /><span /><span />
+              </div>
+              <h3>{u.title}</h3>
+              <div className="lp-card-more">
+                <p>{u.text}</p>
+                <div className="lp-card-foot">
+                  <span className="lp-card-tags">
+                    {u.tools.map((t) => (
+                      <em key={t}>{t}</em>
+                    ))}
+                  </span>
+                  <button onClick={onPick} aria-label={`${u.title} — PDF 열기`}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden><path d="M7 4.5v15l12-7.5z" /></svg>
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <button className="lp-row-arrow is-next" onClick={() => go(1)} disabled={edge.end} aria-label="다음">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>
+        </button>
+      </div>
+    </section>
   );
 }
 
