@@ -29,14 +29,7 @@
 .lp-logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; letter-spacing: -.02em; }
 .lp-nav nav { display: flex; gap: 24px; margin-left: auto; color: var(--ink-2); }
 .lp-nav nav a:hover { color: var(--ink); }
-.lp-nav-ctas { display: flex; align-items: center; gap: 8px; }
-.lp-nav-cta, .lp-nav-ghost { height: 30px; padding: 0 14px; border-radius: 999px; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; white-space: nowrap; transition: background .2s, color .2s, transform .2s var(--ease); }
-.lp-nav-cta { background: var(--blue); color: #fff; }
-.lp-nav-cta:hover { background: #0077ed; }
-.lp-nav-ghost { color: var(--ink); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28); }
-.lp-nav-ghost:hover { background: rgba(255, 255, 255, .1); }
-.lp-nav-cta:active, .lp-nav-ghost:active { transform: scale(.96); }
-@media (max-width: 640px) { .lp-nav nav { display: none; } .lp-nav-ctas { margin-left: auto; } .lp-hide-sm { display: none; } }
+@media (max-width: 640px) { .lp-nav nav { gap: 16px; } }
 
 /* Hero */
 .lp-hero { position: relative; width: var(--wrap); margin: 0 auto; padding: clamp(56px, 10vh, 112px) 0 0; text-align: center; isolation: isolate; }

@@ -98,12 +98,6 @@ export default function Landing() {
           <a href="#uses" onClick={scrollTo('uses')}>이럴 때</a>
           <a href="#faq" onClick={scrollTo('faq')}>자주 묻는 질문</a>
         </nav>
-        <div className="lp-nav-ctas">
-          <a className="lp-nav-ghost" href="#/studio">
-            빈 편집기<span className="lp-hide-sm">로 시작</span>
-          </a>
-          <button className="lp-nav-cta" onClick={open}>PDF 열기</button>
-        </div>
       </header>
 
       <section className="lp-hero">
